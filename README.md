@@ -4,7 +4,14 @@ Balıkesir bölgesini gösteren interaktif bir web harita uygulaması. Bu uygula
 
 ## Özellikler
 
-- **İnteraktif Harita**: OpenStreetMap tabanlı, Balıkesir merkezli harita
+- **İnteraktif Harita**: Balıkesir merkezli harita, 7 farklı altlık harita seçeneği
+  - 🛰️ Uydu Görünümü (varsayılan) - Yüksek çözünürlüklü uydu görüntüleri
+  - 🌍 Hibrit - Uydu görünümü + etiketler
+  - 🗺️ OpenStreetMap - Klasik harita görünümü
+  - 🏙️ Esri World Street - Detaylı sokak haritası
+  - 🎨 CartoDB Voyager - Renkli ve modern tasarım
+  - ⚪ CartoDB Positron - Temiz, minimal beyaz tema
+  - ⚫ CartoDB Dark Matter - Koyu tema
 - **Çizim Araçları**:
   - Poligon (Kapalı alan) çizimi
   - Çizgi (Polyline) çizimi
@@ -21,19 +28,22 @@ Balıkesir bölgesini gösteren interaktif bir web harita uygulaması. Bu uygula
 ## Kullanım
 
 1. `index.html` dosyasını bir web tarayıcısında açın
-2. Harita sağ üstteki çizim araçlarını kullanarak şekiller çizin
-3. Çizimlerinizi istediğiniz formatta indirin:
+2. Sağ üst köşedeki katman seçiciden istediğiniz altlık haritayı seçin
+3. Harita sağ üstteki çizim araçlarını kullanarak şekiller çizin
+4. Çizimlerinizi istediğiniz formatta indirin:
    - **GeoJSON İndir**: Standart GeoJSON formatında
    - **KML İndir**: Google Earth uyumlu KML formatında
    - **WKT İndir**: Well-Known Text formatında
-4. **GeoJSON Yükle** butonu ile mevcut GeoJSON dosyalarınızı haritaya yükleyebilirsiniz
-5. **Tümünü Temizle** butonu ile tüm çizimleri silebilirsiniz
+5. **GeoJSON Yükle** butonu ile mevcut GeoJSON dosyalarınızı haritaya yükleyebilirsiniz
+6. **Tümünü Temizle** butonu ile tüm çizimleri silebilirsiniz
 
 ## Teknolojiler
 
 - [Leaflet.js](https://leafletjs.com/) - Harita kütüphanesi
 - [Leaflet.draw](https://github.com/Leaflet/Leaflet.draw) - Çizim araçları
 - [OpenStreetMap](https://www.openstreetmap.org/) - Harita verileri
+- [Esri ArcGIS](https://www.arcgis.com/) - Uydu ve sokak harita katmanları
+- [CartoDB](https://carto.com/) - Özelleştirilmiş harita stilleri
 
 ## Koordinatlar
 
