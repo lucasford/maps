@@ -85,6 +85,14 @@
             background: #d68910;
         }
 
+        .btn-info {
+            background: #16a085;
+        }
+
+        .btn-info:hover {
+            background: #138d75;
+        }
+
         input[type="file"] {
             display: none;
         }
@@ -115,15 +123,143 @@
             padding: 4px 8px;
             text-decoration: none;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .modal-header h2 {
+            color: #2c3e50;
+            font-size: 22px;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .form-group input[type="color"] {
+            height: 45px;
+            cursor: pointer;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        /* Custom Leaflet Text */
+        .leaflet-text-icon {
+            background: transparent;
+            border: none;
+            white-space: nowrap;
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+            cursor: move;
+        }
+
+        /* Toolbar buttons */
+        .custom-toolbar {
+            display: flex;
+            gap: 5px;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="controls">
         <h1>Balıkesir Harita Uygulaması</h1>
 
+        <div class="custom-toolbar">
+            <button class="btn btn-info" onclick="addCustomCircle()" title="Yarıçap ile Daire Çiz">🔵 Daire</button>
+            <button class="btn btn-info" onclick="addHumanIcon()" title="İnsan Simgesi Ekle">🚶 İnsan</button>
+            <button class="btn btn-info" onclick="addTextLabel()" title="Text Ekle">📝 Yazı</button>
+        </div>
+
         <button class="btn btn-success" onclick="exportGeoJSON()">GeoJSON İndir</button>
         <button class="btn btn-success" onclick="exportKML()">KML İndir</button>
         <button class="btn btn-success" onclick="exportWKT()">WKT İndir</button>
+        <button class="btn btn-success" onclick="exportPDF()">📄 PDF İndir</button>
         <button class="btn btn-danger" onclick="clearAll()">Tümünü Temizle</button>
 
         <label for="fileInput" class="file-label">GeoJSON Yükle</label>
@@ -136,6 +272,91 @@
 
     <div id="map"></div>
 
+    <!-- Circle Modal -->
+    <div id="circleModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeCircleModal()">&times;</span>
+            <div class="modal-header">
+                <h2>Daire Çiz</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="circleRadius">Yarıçap (metre):</label>
+                    <input type="number" id="circleRadius" value="500" min="1" max="100000">
+                </div>
+                <div class="form-group">
+                    <label for="circleColor">Renk:</label>
+                    <input type="color" id="circleColor" value="#27ae60">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="closeCircleModal()">İptal</button>
+                <button class="btn btn-success" onclick="startDrawingCircle()">Çiz</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Human Icon Modal -->
+    <div id="humanModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeHumanModal()">&times;</span>
+            <div class="modal-header">
+                <h2>İnsan Simgesi Ekle</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="iconSize">Boyut:</label>
+                    <input type="range" id="iconSize" min="20" max="100" value="40">
+                    <span id="iconSizeValue">40px</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="closeHumanModal()">İptal</button>
+                <button class="btn btn-success" onclick="startPlacingHuman()">Ekle</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Text Modal -->
+    <div id="textModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeTextModal()">&times;</span>
+            <div class="modal-header">
+                <h2>Text Ekle</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="textContent">Yazı:</label>
+                    <textarea id="textContent" rows="3" placeholder="Yazınızı buraya girin..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="textSize">Boyut:</label>
+                    <input type="range" id="textSize" min="12" max="72" value="16">
+                    <span id="textSizeValue">16px</span>
+                </div>
+                <div class="form-group">
+                    <label for="textFont">Font:</label>
+                    <select id="textFont">
+                        <option value="Arial">Arial</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Comic Sans MS">Comic Sans MS</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="textColor">Renk:</label>
+                    <input type="color" id="textColor" value="#000000">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="closeTextModal()">İptal</button>
+                <button class="btn btn-success" onclick="startPlacingText()">Ekle</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -144,6 +365,10 @@
 
     <!-- ToGeoJSON for KML export -->
     <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
         // Balıkesir koordinatları: 39.6484° K, 27.8826° D
@@ -246,14 +471,25 @@
         // Çizim tamamlandığında
         map.on(L.Draw.Event.CREATED, function (event) {
             const layer = event.layer;
+
+            // Daireleri sürüklenebilir yap
+            if (layer instanceof L.Circle) {
+                layer.dragging = new L.Handler.MarkerDrag(layer);
+                layer.dragging.enable();
+            }
+
             drawnItems.addLayer(layer);
             updateFeatureCount();
 
             // Popup ekle
-            if (layer instanceof L.Polygon) {
+            if (layer instanceof L.Polygon && !(layer instanceof L.Circle)) {
                 const area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                 layer.bindPopup(`Alan: ${(area / 10000).toFixed(2)} hektar`);
-            } else if (layer instanceof L.Polyline) {
+            } else if (layer instanceof L.Circle) {
+                const radius = layer.getRadius();
+                const area = Math.PI * radius * radius;
+                layer.bindPopup(`Yarıçap: ${radius.toFixed(0)} m<br>Alan: ${(area / 10000).toFixed(2)} hektar`);
+            } else if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
                 let length = 0;
                 const latlngs = layer.getLatLngs();
                 for (let i = 0; i < latlngs.length - 1; i++) {
@@ -278,6 +514,177 @@
             const count = Object.keys(drawnItems._layers).length;
             document.getElementById('featureCount').textContent = `Çizim: ${count}`;
         }
+
+        // ============ CUSTOM CIRCLE WITH RADIUS ============
+        function addCustomCircle() {
+            document.getElementById('circleModal').style.display = 'block';
+        }
+
+        function closeCircleModal() {
+            document.getElementById('circleModal').style.display = 'none';
+        }
+
+        function startDrawingCircle() {
+            const radius = parseInt(document.getElementById('circleRadius').value);
+            const color = document.getElementById('circleColor').value;
+
+            closeCircleModal();
+
+            map.getContainer().style.cursor = 'crosshair';
+
+            const clickHandler = function(e) {
+                const circle = L.circle(e.latlng, {
+                    radius: radius,
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.3
+                });
+
+                // Daireleri sürüklenebilir yap
+                circle.dragging = new L.Handler.MarkerDrag(circle);
+                circle.dragging.enable();
+
+                drawnItems.addLayer(circle);
+
+                const area = Math.PI * radius * radius;
+                circle.bindPopup(`Yarıçap: ${radius} m<br>Alan: ${(area / 10000).toFixed(2)} hektar`);
+
+                updateFeatureCount();
+
+                map.getContainer().style.cursor = '';
+                map.off('click', clickHandler);
+            };
+
+            map.once('click', clickHandler);
+        }
+
+        // ============ HUMAN ICON ============
+        function addHumanIcon() {
+            document.getElementById('humanModal').style.display = 'block';
+        }
+
+        function closeHumanModal() {
+            document.getElementById('humanModal').style.display = 'none';
+        }
+
+        // Icon size slider
+        document.getElementById('iconSize').addEventListener('input', function(e) {
+            document.getElementById('iconSizeValue').textContent = e.target.value + 'px';
+        });
+
+        function startPlacingHuman() {
+            const size = parseInt(document.getElementById('iconSize').value);
+
+            closeHumanModal();
+
+            map.getContainer().style.cursor = 'crosshair';
+
+            const clickHandler = function(e) {
+                const humanIcon = L.divIcon({
+                    html: `<div style="font-size: ${size}px; cursor: move;">🚶</div>`,
+                    className: 'human-icon',
+                    iconSize: [size, size],
+                    iconAnchor: [size/2, size]
+                });
+
+                const marker = L.marker(e.latlng, {
+                    icon: humanIcon,
+                    draggable: true
+                });
+
+                marker.iconSize = size;
+
+                marker.on('click', function() {
+                    const newSize = prompt('Yeni boyut (px):', size);
+                    if (newSize && !isNaN(newSize)) {
+                        const updatedIcon = L.divIcon({
+                            html: `<div style="font-size: ${newSize}px; cursor: move;">🚶</div>`,
+                            className: 'human-icon',
+                            iconSize: [newSize, newSize],
+                            iconAnchor: [newSize/2, newSize]
+                        });
+                        marker.setIcon(updatedIcon);
+                        marker.iconSize = newSize;
+                    }
+                });
+
+                drawnItems.addLayer(marker);
+                updateFeatureCount();
+
+                map.getContainer().style.cursor = '';
+                map.off('click', clickHandler);
+            };
+
+            map.once('click', clickHandler);
+        }
+
+        // ============ TEXT LABEL ============
+        function addTextLabel() {
+            document.getElementById('textModal').style.display = 'block';
+        }
+
+        function closeTextModal() {
+            document.getElementById('textModal').style.display = 'none';
+        }
+
+        // Text size slider
+        document.getElementById('textSize').addEventListener('input', function(e) {
+            document.getElementById('textSizeValue').textContent = e.target.value + 'px';
+        });
+
+        function startPlacingText() {
+            const text = document.getElementById('textContent').value;
+            const size = parseInt(document.getElementById('textSize').value);
+            const font = document.getElementById('textFont').value;
+            const color = document.getElementById('textColor').value;
+
+            if (!text) {
+                alert('Lütfen bir yazı girin!');
+                return;
+            }
+
+            closeTextModal();
+
+            map.getContainer().style.cursor = 'crosshair';
+
+            const clickHandler = function(e) {
+                const textIcon = L.divIcon({
+                    html: `<div style="font-size: ${size}px; font-family: ${font}; color: ${color}; white-space: nowrap; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;">${text}</div>`,
+                    className: 'leaflet-text-icon',
+                    iconSize: null
+                });
+
+                const marker = L.marker(e.latlng, {
+                    icon: textIcon,
+                    draggable: true
+                });
+
+                marker.textData = { text, size, font, color };
+
+                marker.on('click', function() {
+                    const newText = prompt('Yeni yazı:', text);
+                    if (newText) {
+                        const updatedIcon = L.divIcon({
+                            html: `<div style="font-size: ${size}px; font-family: ${font}; color: ${color}; white-space: nowrap; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;">${newText}</div>`,
+                            className: 'leaflet-text-icon',
+                            iconSize: null
+                        });
+                        marker.setIcon(updatedIcon);
+                        marker.textData.text = newText;
+                    }
+                });
+
+                drawnItems.addLayer(marker);
+                updateFeatureCount();
+
+                map.getContainer().style.cursor = '';
+                map.off('click', clickHandler);
+            };
+
+            map.once('click', clickHandler);
+        }
+
+        // ============ EXPORT FUNCTIONS ============
 
         // GeoJSON export
         function exportGeoJSON() {
@@ -402,6 +809,56 @@
             URL.revokeObjectURL(url);
         }
 
+        // PDF export
+        async function exportPDF() {
+            if (Object.keys(drawnItems._layers).length === 0) {
+                alert('Önce harita üzerinde çizim yapmanız gerekiyor!');
+                return;
+            }
+
+            // Hide controls temporarily
+            const controls = document.querySelector('.controls');
+            const originalDisplay = controls.style.display;
+            controls.style.display = 'none';
+
+            try {
+                // Capture map as image
+                const mapElement = document.getElementById('map');
+                const canvas = await html2canvas(mapElement, {
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff'
+                });
+
+                // Create PDF
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+                // Add title
+                pdf.setFontSize(16);
+                pdf.setTextColor(0, 0, 0);
+                pdf.text('Balıkesir Harita Uygulaması', 10, 10);
+
+                pdf.save(`balikesir_harita_${Date.now()}.pdf`);
+            } catch (error) {
+                console.error('PDF export error:', error);
+                alert('PDF oluşturulurken bir hata oluştu!');
+            } finally {
+                // Restore controls
+                controls.style.display = originalDisplay;
+            }
+        }
+
         // Tümünü temizle
         function clearAll() {
             if (confirm('Tüm çizimleri silmek istediğinize emin misiniz?')) {
@@ -493,6 +950,13 @@
                 return Math.abs(area);
             }
         });
+
+        // Close modals on outside click
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        };
 
         // Sayfa yüklendiğinde özellik sayısını güncelle
         updateFeatureCount();
