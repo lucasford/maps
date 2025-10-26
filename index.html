@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balıkesir Harita Uygulaması</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Leaflet Draw CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map {
+            flex: 1;
+            width: 100%;
+        }
+
+        .controls {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .controls h1 {
+            font-size: 20px;
+            margin-right: 20px;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+        }
+
+        .btn-warning:hover {
+            background: #d68910;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            background: #9b59b6;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .file-label:hover {
+            background: #8e44ad;
+        }
+
+        .info {
+            margin-left: auto;
+            font-size: 14px;
+        }
+
+        .leaflet-draw-actions a {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            color: #333;
+            padding: 4px 8px;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h1>Balıkesir Harita Uygulaması</h1>
+
+        <button class="btn btn-success" onclick="exportGeoJSON()">GeoJSON İndir</button>
+        <button class="btn btn-success" onclick="exportKML()">KML İndir</button>
+        <button class="btn btn-success" onclick="exportWKT()">WKT İndir</button>
+        <button class="btn btn-danger" onclick="clearAll()">Tümünü Temizle</button>
+
+        <label for="fileInput" class="file-label">GeoJSON Yükle</label>
+        <input type="file" id="fileInput" accept=".geojson,.json" onchange="loadGeoJSON(event)">
+
+        <div class="info">
+            <span id="featureCount">Çizim: 0</span>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet Draw JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <!-- ToGeoJSON for KML export -->
+    <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
+
+    <script>
+        // Balıkesir koordinatları: 39.6484° K, 27.8826° D
+        const map = L.map('map').setView([39.6484, 27.8826], 12);
+
+        // OpenStreetMap katmanı
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Çizim katmanı
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        // Çizim kontrolleri
+        const drawControl = new L.Control.Draw({
+            position: 'topright',
+            draw: {
+                polygon: {
+                    allowIntersection: false,
+                    showArea: true,
+                    drawError: {
+                        color: '#e74c3c',
+                        message: '<strong>Hata!</strong> Şekiller kesişemez!'
+                    },
+                    shapeOptions: {
+                        color: '#3498db',
+                        fillOpacity: 0.3
+                    }
+                },
+                polyline: {
+                    shapeOptions: {
+                        color: '#e74c3c',
+                        weight: 3
+                    }
+                },
+                rectangle: {
+                    shapeOptions: {
+                        color: '#9b59b6',
+                        fillOpacity: 0.3
+                    }
+                },
+                circle: {
+                    shapeOptions: {
+                        color: '#27ae60',
+                        fillOpacity: 0.3
+                    }
+                },
+                circlemarker: false,
+                marker: true
+            },
+            edit: {
+                featureGroup: drawnItems,
+                remove: true
+            }
+        });
+        map.addControl(drawControl);
+
+        // Çizim tamamlandığında
+        map.on(L.Draw.Event.CREATED, function (event) {
+            const layer = event.layer;
+            drawnItems.addLayer(layer);
+            updateFeatureCount();
+
+            // Popup ekle
+            if (layer instanceof L.Polygon) {
+                const area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                layer.bindPopup(`Alan: ${(area / 10000).toFixed(2)} hektar`);
+            } else if (layer instanceof L.Polyline) {
+                let length = 0;
+                const latlngs = layer.getLatLngs();
+                for (let i = 0; i < latlngs.length - 1; i++) {
+                    length += latlngs[i].distanceTo(latlngs[i + 1]);
+                }
+                layer.bindPopup(`Uzunluk: ${(length / 1000).toFixed(2)} km`);
+            }
+        });
+
+        // Çizim düzenlendiğinde
+        map.on(L.Draw.Event.EDITED, function (event) {
+            updateFeatureCount();
+        });
+
+        // Çizim silindiğinde
+        map.on(L.Draw.Event.DELETED, function (event) {
+            updateFeatureCount();
+        });
+
+        // Özellik sayısını güncelle
+        function updateFeatureCount() {
+            const count = Object.keys(drawnItems._layers).length;
+            document.getElementById('featureCount').textContent = `Çizim: ${count}`;
+        }
+
+        // GeoJSON export
+        function exportGeoJSON() {
+            const data = drawnItems.toGeoJSON();
+
+            if (data.features.length === 0) {
+                alert('Önce harita üzerinde çizim yapmanız gerekiyor!');
+                return;
+            }
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `balikesir_${Date.now()}.geojson`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // KML export
+        function exportKML() {
+            const data = drawnItems.toGeoJSON();
+
+            if (data.features.length === 0) {
+                alert('Önce harita üzerinde çizim yapmanız gerekiyor!');
+                return;
+            }
+
+            // GeoJSON'dan KML'e dönüştür
+            let kml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            kml += '<kml xmlns="http://www.opengis.net/kml/2.2">\n';
+            kml += '  <Document>\n';
+            kml += '    <name>Balıkesir Harita Çizimleri</name>\n';
+
+            data.features.forEach((feature, index) => {
+                kml += '    <Placemark>\n';
+                kml += `      <name>Çizim ${index + 1}</name>\n`;
+
+                if (feature.geometry.type === 'Polygon') {
+                    kml += '      <Polygon>\n';
+                    kml += '        <outerBoundaryIs>\n';
+                    kml += '          <LinearRing>\n';
+                    kml += '            <coordinates>\n';
+                    feature.geometry.coordinates[0].forEach(coord => {
+                        kml += `              ${coord[0]},${coord[1]},0\n`;
+                    });
+                    kml += '            </coordinates>\n';
+                    kml += '          </LinearRing>\n';
+                    kml += '        </outerBoundaryIs>\n';
+                    kml += '      </Polygon>\n';
+                } else if (feature.geometry.type === 'LineString') {
+                    kml += '      <LineString>\n';
+                    kml += '        <coordinates>\n';
+                    feature.geometry.coordinates.forEach(coord => {
+                        kml += `          ${coord[0]},${coord[1]},0\n`;
+                    });
+                    kml += '        </coordinates>\n';
+                    kml += '      </LineString>\n';
+                } else if (feature.geometry.type === 'Point') {
+                    kml += '      <Point>\n';
+                    kml += '        <coordinates>';
+                    kml += `${feature.geometry.coordinates[0]},${feature.geometry.coordinates[1]},0`;
+                    kml += '</coordinates>\n';
+                    kml += '      </Point>\n';
+                }
+
+                kml += '    </Placemark>\n';
+            });
+
+            kml += '  </Document>\n';
+            kml += '</kml>';
+
+            const dataBlob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `balikesir_${Date.now()}.kml`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // WKT export
+        function exportWKT() {
+            const data = drawnItems.toGeoJSON();
+
+            if (data.features.length === 0) {
+                alert('Önce harita üzerinde çizim yapmanız gerekiyor!');
+                return;
+            }
+
+            let wkt = '';
+
+            data.features.forEach((feature, index) => {
+                if (index > 0) wkt += '\n\n';
+
+                if (feature.geometry.type === 'Polygon') {
+                    wkt += 'POLYGON((';
+                    feature.geometry.coordinates[0].forEach((coord, i) => {
+                        if (i > 0) wkt += ', ';
+                        wkt += `${coord[0]} ${coord[1]}`;
+                    });
+                    wkt += '))';
+                } else if (feature.geometry.type === 'LineString') {
+                    wkt += 'LINESTRING(';
+                    feature.geometry.coordinates.forEach((coord, i) => {
+                        if (i > 0) wkt += ', ';
+                        wkt += `${coord[0]} ${coord[1]}`;
+                    });
+                    wkt += ')';
+                } else if (feature.geometry.type === 'Point') {
+                    wkt += `POINT(${feature.geometry.coordinates[0]} ${feature.geometry.coordinates[1]})`;
+                }
+            });
+
+            const dataBlob = new Blob([wkt], { type: 'text/plain' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `balikesir_${Date.now()}.wkt`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Tümünü temizle
+        function clearAll() {
+            if (confirm('Tüm çizimleri silmek istediğinize emin misiniz?')) {
+                drawnItems.clearLayers();
+                updateFeatureCount();
+            }
+        }
+
+        // GeoJSON dosyası yükle
+        function loadGeoJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const geojson = JSON.parse(e.target.result);
+
+                    // Mevcut çizimleri temizle
+                    drawnItems.clearLayers();
+
+                    // GeoJSON'ı haritaya ekle
+                    L.geoJSON(geojson, {
+                        style: function(feature) {
+                            return {
+                                color: '#3498db',
+                                fillColor: '#3498db',
+                                fillOpacity: 0.3,
+                                weight: 2
+                            };
+                        },
+                        pointToLayer: function(feature, latlng) {
+                            return L.marker(latlng);
+                        },
+                        onEachFeature: function(feature, layer) {
+                            // Her özelliği düzenlenebilir katmana ekle
+                            drawnItems.addLayer(layer);
+
+                            // Özellik bilgilerini popup olarak ekle
+                            if (feature.properties) {
+                                let popupContent = '<div style="max-height: 200px; overflow-y: auto;">';
+                                for (let key in feature.properties) {
+                                    if (feature.properties[key] !== null && feature.properties[key] !== '') {
+                                        popupContent += `<b>${key}:</b> ${feature.properties[key]}<br>`;
+                                    }
+                                }
+                                popupContent += '</div>';
+                                layer.bindPopup(popupContent);
+                            }
+                        }
+                    });
+
+                    // Haritayı yüklenen veriye yakınlaştır
+                    const bounds = drawnItems.getBounds();
+                    if (bounds.isValid()) {
+                        map.fitBounds(bounds);
+                    }
+
+                    updateFeatureCount();
+                    alert('GeoJSON dosyası başarıyla yüklendi!');
+                } catch (error) {
+                    alert('GeoJSON dosyası yüklenirken hata oluştu: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+
+            // Input'u sıfırla (aynı dosyanın tekrar yüklenmesine izin ver)
+            event.target.value = '';
+        }
+
+        // Leaflet GeometryUtil eklentisi (alan hesaplama için)
+        L.GeometryUtil = L.extend(L.GeometryUtil || {}, {
+            geodesicArea: function (latLngs) {
+                let pointsCount = latLngs.length,
+                    area = 0.0,
+                    d2r = Math.PI / 180,
+                    p1, p2;
+
+                if (pointsCount > 2) {
+                    for (let i = 0; i < pointsCount; i++) {
+                        p1 = latLngs[i];
+                        p2 = latLngs[(i + 1) % pointsCount];
+                        area += ((p2.lng - p1.lng) * d2r) *
+                                (2 + Math.sin(p1.lat * d2r) + Math.sin(p2.lat * d2r));
+                    }
+                    area = area * 6378137.0 * 6378137.0 / 2.0;
+                }
+
+                return Math.abs(area);
+            }
+        });
+
+        // Sayfa yüklendiğinde özellik sayısını güncelle
+        updateFeatureCount();
+    </script>
+</body>
+</html>
