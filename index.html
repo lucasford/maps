@@ -244,6 +244,158 @@
             gap: 5px;
             margin-right: 10px;
         }
+
+        /* Layer Panel */
+        .layer-panel {
+            position: fixed;
+            right: 0;
+            top: 80px;
+            width: 350px;
+            height: calc(100vh - 80px);
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+            transform: translateX(350px);
+            transition: transform 0.3s;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .layer-panel.open {
+            transform: translateX(0);
+        }
+
+        .layer-panel-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .layer-panel-toggle {
+            position: fixed;
+            right: 0;
+            top: 100px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 10px;
+            cursor: pointer;
+            border-radius: 5px 0 0 5px;
+            z-index: 999;
+            font-size: 18px;
+            transition: background 0.3s;
+        }
+
+        .layer-panel-toggle:hover {
+            background: #2980b9;
+        }
+
+        .layer-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        .layer-item:hover {
+            background: #f8f9fa;
+        }
+
+        .layer-item-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .layer-item-title {
+            flex: 1;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .layer-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .layer-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .layer-btn-toggle {
+            background: #27ae60;
+            color: white;
+        }
+
+        .layer-btn-toggle.hidden {
+            background: #95a5a6;
+        }
+
+        .layer-btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .layer-btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .layer-btn-color {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        /* PDF Preview Modal */
+        .modal-content.large {
+            width: 800px;
+            max-width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .pdf-preview {
+            border: 2px solid #ddd;
+            padding: 20px;
+            background: white;
+            margin: 20px 0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pdf-preview img {
+            max-width: 100%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .logo-preview {
+            max-width: 200px;
+            max-height: 100px;
+            margin-top: 10px;
+            border: 2px dashed #ddd;
+            padding: 10px;
+        }
+
+        /* Map container */
+        .map-container {
+            position: relative;
+            flex: 1;
+            display: flex;
+        }
     </style>
 </head>
 <body>
@@ -270,7 +422,21 @@
         </div>
     </div>
 
-    <div id="map"></div>
+    <div class="map-container">
+        <div id="map"></div>
+
+        <!-- Layer Panel Toggle Button -->
+        <button class="layer-panel-toggle" onclick="toggleLayerPanel()" title="Katmanlar">📋</button>
+
+        <!-- Layer Panel -->
+        <div class="layer-panel" id="layerPanel">
+            <div class="layer-panel-header">
+                <h3>Katmanlar</h3>
+                <button class="btn btn-danger btn-sm" onclick="toggleLayerPanel()">✕</button>
+            </div>
+            <div id="layerList"></div>
+        </div>
+    </div>
 
     <!-- Circle Modal -->
     <div id="circleModal" class="modal">
@@ -326,8 +492,8 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="textContent">Yazı:</label>
-                    <textarea id="textContent" rows="3" placeholder="Yazınızı buraya girin..."></textarea>
+                    <label for="textContent">Yazı (Enter ile satır ekleyin):</label>
+                    <textarea id="textContent" rows="5" placeholder="Yazınızı buraya girin...&#10;Çok satırlı metin ekleyebilirsiniz"></textarea>
                 </div>
                 <div class="form-group">
                     <label for="textSize">Boyut:</label>
@@ -353,6 +519,38 @@
             <div class="modal-footer">
                 <button class="btn btn-danger" onclick="closeTextModal()">İptal</button>
                 <button class="btn btn-success" onclick="startPlacingText()">Ekle</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Export Modal -->
+    <div id="pdfModal" class="modal">
+        <div class="modal-content large">
+            <span class="close-btn" onclick="closePDFModal()">&times;</span>
+            <div class="modal-header">
+                <h2>PDF Önizleme ve Ayarlar</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="pdfTitle">Başlık:</label>
+                    <input type="text" id="pdfTitle" value="Balıkesir Harita Raporu" placeholder="PDF başlığını girin">
+                </div>
+                <div class="form-group">
+                    <label for="pdfLogo">Logo (opsiyonel):</label>
+                    <input type="file" id="pdfLogo" accept="image/*" onchange="previewLogo(event)" style="display: block;">
+                    <div id="logoPreviewContainer"></div>
+                </div>
+                <div class="form-group">
+                    <label>Önizleme:</label>
+                    <div class="pdf-preview" id="pdfPreview">
+                        <p style="color: #999;">Önizleme oluştur butonuna tıklayın...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-warning" onclick="generatePreview()">🔍 Önizleme Oluştur</button>
+                <button class="btn btn-danger" onclick="closePDFModal()">İptal</button>
+                <button class="btn btn-success" onclick="downloadPDF()">📄 PDF İndir</button>
             </div>
         </div>
     </div>
@@ -479,6 +677,7 @@
 
             drawnItems.addLayer(layer);
             updateFeatureCount();
+            updateLayerPanel();
 
             // Popup ekle
             if (layer instanceof L.Polygon && !(layer instanceof L.Circle)) {
@@ -501,11 +700,13 @@
         // Çizim düzenlendiğinde
         map.on(L.Draw.Event.EDITED, function (event) {
             updateFeatureCount();
+            updateLayerPanel();
         });
 
         // Çizim silindiğinde
         map.on(L.Draw.Event.DELETED, function (event) {
             updateFeatureCount();
+            updateLayerPanel();
         });
 
         // Özellik sayısını güncelle
@@ -574,6 +775,7 @@
                 circle.bindPopup(`Yarıçap: ${radius} m<br>Alan: ${(area / 10000).toFixed(2)} hektar`);
 
                 updateFeatureCount();
+                updateLayerPanel();
 
                 map.getContainer().style.cursor = '';
                 map.off('click', clickHandler);
@@ -633,7 +835,10 @@
                 });
 
                 drawnItems.addLayer(marker);
+                marker.layerType = 'icon';
+                marker.layerName = 'İnsan Simgesi';
                 updateFeatureCount();
+                updateLayerPanel();
 
                 map.getContainer().style.cursor = '';
                 map.off('click', clickHandler);
@@ -672,8 +877,11 @@
             map.getContainer().style.cursor = 'crosshair';
 
             const clickHandler = function(e) {
+                // Convert line breaks to <br> tags
+                const formattedText = text.replace(/\n/g, '<br>');
+
                 const textIcon = L.divIcon({
-                    html: `<div style="font-size: ${size}px; font-family: ${font}; color: ${color}; white-space: nowrap; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;">${text}</div>`,
+                    html: `<div style="font-size: ${size}px; font-family: ${font}; color: ${color}; white-space: pre-wrap; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;">${formattedText}</div>`,
                     className: 'leaflet-text-icon',
                     iconSize: null
                 });
@@ -686,10 +894,11 @@
                 marker.textData = { text, size, font, color };
 
                 marker.on('click', function() {
-                    const newText = prompt('Yeni yazı:', text);
+                    const newText = prompt('Yeni yazı (Enter için \\n kullanın):', text);
                     if (newText) {
+                        const formattedNewText = newText.replace(/\n/g, '<br>');
                         const updatedIcon = L.divIcon({
-                            html: `<div style="font-size: ${size}px; font-family: ${font}; color: ${color}; white-space: nowrap; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;">${newText}</div>`,
+                            html: `<div style="font-size: ${size}px; font-family: ${font}; color: ${color}; white-space: pre-wrap; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;">${formattedNewText}</div>`,
                             className: 'leaflet-text-icon',
                             iconSize: null
                         });
@@ -699,7 +908,10 @@
                 });
 
                 drawnItems.addLayer(marker);
+                marker.layerType = 'text';
+                marker.layerName = 'Text: ' + (text.substring(0, 20) + (text.length > 20 ? '...' : ''));
                 updateFeatureCount();
+                updateLayerPanel();
 
                 map.getContainer().style.cursor = '';
                 map.off('click', clickHandler);
@@ -833,28 +1045,82 @@
             URL.revokeObjectURL(url);
         }
 
-        // PDF export
-        async function exportPDF() {
+        // ============ PDF EXPORT WITH PREVIEW ============
+        let pdfPreviewData = null;
+        let pdfLogoData = null;
+
+        function exportPDF() {
             if (Object.keys(drawnItems._layers).length === 0) {
                 alert('Önce harita üzerinde çizim yapmanız gerekiyor!');
                 return;
             }
+            document.getElementById('pdfModal').style.display = 'block';
+        }
 
-            // Hide controls temporarily
-            const controls = document.querySelector('.controls');
-            const originalDisplay = controls.style.display;
-            controls.style.display = 'none';
+        function closePDFModal() {
+            document.getElementById('pdfModal').style.display = 'none';
+            pdfPreviewData = null;
+        }
+
+        function previewLogo(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                pdfLogoData = e.target.result;
+                const container = document.getElementById('logoPreviewContainer');
+                container.innerHTML = `<img src="${e.target.result}" class="logo-preview" alt="Logo Preview">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function generatePreview() {
+            const previewDiv = document.getElementById('pdfPreview');
+            previewDiv.innerHTML = '<p style="color: #999;">Önizleme oluşturuluyor...</p>';
 
             try {
-                // Capture map as image
+                // Hide UI elements
+                const controls = document.querySelector('.controls');
+                const layerPanel = document.getElementById('layerPanel');
+                const layerToggle = document.querySelector('.layer-panel-toggle');
+
+                controls.style.display = 'none';
+                layerPanel.style.display = 'none';
+                layerToggle.style.display = 'none';
+
+                // Capture map
                 const mapElement = document.getElementById('map');
                 const canvas = await html2canvas(mapElement, {
                     useCORS: true,
                     allowTaint: true,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    scale: 2
                 });
 
-                // Create PDF
+                pdfPreviewData = canvas.toDataURL('image/png');
+
+                // Show preview
+                previewDiv.innerHTML = `<img src="${pdfPreviewData}" alt="PDF Preview" style="max-width: 100%; border: 1px solid #ddd;">`;
+
+                // Restore UI
+                controls.style.display = 'flex';
+                layerPanel.style.display = '';
+                layerToggle.style.display = 'block';
+
+            } catch (error) {
+                console.error('Preview error:', error);
+                previewDiv.innerHTML = '<p style="color: red;">Önizleme oluşturulamadı!</p>';
+            }
+        }
+
+        async function downloadPDF() {
+            if (!pdfPreviewData) {
+                alert('Önce önizleme oluşturun!');
+                return;
+            }
+
+            try {
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF({
                     orientation: 'landscape',
@@ -862,24 +1128,52 @@
                     format: 'a4'
                 });
 
-                const imgData = canvas.toDataURL('image/png');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = pdf.internal.pageSize.getHeight();
+                const title = document.getElementById('pdfTitle').value || 'Balıkesir Harita Raporu';
 
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                // Add title and logo area (top 20mm reserved)
+                const headerHeight = 20;
+                pdf.setFillColor(44, 62, 80);
+                pdf.rect(0, 0, pdfWidth, headerHeight, 'F');
 
                 // Add title
-                pdf.setFontSize(16);
-                pdf.setTextColor(0, 0, 0);
-                pdf.text('Balıkesir Harita Uygulaması', 10, 10);
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFontSize(18);
+                pdf.text(title, 10, 12);
 
-                pdf.save(`balikesir_harita_${Date.now()}.pdf`);
+                // Add date
+                pdf.setFontSize(10);
+                const date = new Date().toLocaleDateString('tr-TR');
+                pdf.text(date, pdfWidth - 50, 12);
+
+                // Add logo if provided
+                if (pdfLogoData) {
+                    try {
+                        pdf.addImage(pdfLogoData, 'PNG', pdfWidth - 50, 3, 40, 14);
+                    } catch (e) {
+                        console.warn('Logo eklenemedi:', e);
+                    }
+                }
+
+                // Calculate map dimensions (remaining space)
+                const mapWidth = pdfWidth;
+                const mapHeight = pdfHeight - headerHeight - 2; // 2mm margin at bottom
+                const mapY = headerHeight;
+
+                // Add map image
+                pdf.addImage(pdfPreviewData, 'PNG', 0, mapY, mapWidth, mapHeight);
+
+                // Save PDF
+                const filename = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                pdf.save(`${filename}_${Date.now()}.pdf`);
+
+                closePDFModal();
+                alert('PDF başarıyla indirildi!');
+
             } catch (error) {
-                console.error('PDF export error:', error);
-                alert('PDF oluşturulurken bir hata oluştu!');
-            } finally {
-                // Restore controls
-                controls.style.display = originalDisplay;
+                console.error('PDF download error:', error);
+                alert('PDF indirilirken bir hata oluştu!');
             }
         }
 
@@ -888,6 +1182,7 @@
             if (confirm('Tüm çizimleri silmek istediğinize emin misiniz?')) {
                 drawnItems.clearLayers();
                 updateFeatureCount();
+                updateLayerPanel();
             }
         }
 
@@ -942,6 +1237,7 @@
                     }
 
                     updateFeatureCount();
+                    updateLayerPanel();
                     alert('GeoJSON dosyası başarıyla yüklendi!');
                 } catch (error) {
                     alert('GeoJSON dosyası yüklenirken hata oluştu: ' + error.message);
@@ -975,6 +1271,125 @@
             }
         });
 
+        // ============ LAYER PANEL ============
+        function toggleLayerPanel() {
+            const panel = document.getElementById('layerPanel');
+            panel.classList.toggle('open');
+        }
+
+        function updateLayerPanel() {
+            const layerList = document.getElementById('layerList');
+            layerList.innerHTML = '';
+
+            let layerIndex = 0;
+            drawnItems.eachLayer(function(layer) {
+                const layerId = L.stamp(layer);
+
+                // Determine layer type and name
+                let layerType = 'unknown';
+                let layerName = 'Bilinmeyen';
+                let layerColor = '#3498db';
+
+                if (layer instanceof L.Circle) {
+                    layerType = 'circle';
+                    const radius = layer.getRadius();
+                    layerName = `Daire (r=${radius.toFixed(0)}m)`;
+                    layerColor = layer.options.color || '#27ae60';
+                } else if (layer instanceof L.Polygon) {
+                    layerType = 'polygon';
+                    layerName = 'Poligon';
+                    layerColor = layer.options.color || '#3498db';
+                } else if (layer instanceof L.Polyline) {
+                    layerType = 'polyline';
+                    layerName = 'Çizgi';
+                    layerColor = layer.options.color || '#e74c3c';
+                } else if (layer instanceof L.Rectangle) {
+                    layerType = 'rectangle';
+                    layerName = 'Dikdörtgen';
+                    layerColor = layer.options.color || '#9b59b6';
+                } else if (layer instanceof L.Marker) {
+                    if (layer.layerType === 'text') {
+                        layerType = 'text';
+                        layerName = layer.layerName || 'Text';
+                    } else if (layer.iconSize) {
+                        layerType = 'icon';
+                        layerName = 'İnsan Simgesi';
+                    } else {
+                        layerType = 'marker';
+                        layerName = 'İşaretçi';
+                    }
+                }
+
+                layer._layerId = layerId;
+                layer._layerType = layerType;
+                layer._layerName = layerName;
+
+                // Create layer item
+                const layerItem = document.createElement('div');
+                layerItem.className = 'layer-item';
+                layerItem.innerHTML = `
+                    <div class="layer-item-header">
+                        <span class="layer-item-title">${layerIndex + 1}. ${layerName}</span>
+                    </div>
+                    <div class="layer-item-actions">
+                        <button class="layer-btn layer-btn-toggle ${layer._isHidden ? 'hidden' : ''}" onclick="toggleLayerVisibility(${layerId})" title="Görünürlük">
+                            ${layer._isHidden ? '👁️‍🗨️' : '👁️'}
+                        </button>
+                        ${layerType !== 'text' && layerType !== 'icon' && layerType !== 'marker' ? `
+                        <input type="color" class="layer-btn-color" value="${layerColor}" onchange="changeLayerColor(${layerId}, this.value)" title="Renk">
+                        ` : ''}
+                        <button class="layer-btn layer-btn-delete" onclick="deleteLayer(${layerId})" title="Sil">🗑️</button>
+                    </div>
+                `;
+                layerList.appendChild(layerItem);
+                layerIndex++;
+            });
+
+            if (layerIndex === 0) {
+                layerList.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">Henüz katman yok</div>';
+            }
+        }
+
+        function toggleLayerVisibility(layerId) {
+            drawnItems.eachLayer(function(layer) {
+                if (L.stamp(layer) === layerId) {
+                    if (layer._isHidden) {
+                        map.addLayer(layer);
+                        layer._isHidden = false;
+                    } else {
+                        map.removeLayer(layer);
+                        layer._isHidden = true;
+                    }
+                    updateLayerPanel();
+                }
+            });
+        }
+
+        function changeLayerColor(layerId, newColor) {
+            drawnItems.eachLayer(function(layer) {
+                if (L.stamp(layer) === layerId) {
+                    if (layer.setStyle) {
+                        layer.setStyle({
+                            color: newColor,
+                            fillColor: newColor
+                        });
+                    }
+                }
+            });
+        }
+
+        function deleteLayer(layerId) {
+            if (confirm('Bu katmanı silmek istediğinize emin misiniz?')) {
+                drawnItems.eachLayer(function(layer) {
+                    if (L.stamp(layer) === layerId) {
+                        drawnItems.removeLayer(layer);
+                        updateFeatureCount();
+                        updateLayerPanel();
+                    }
+                });
+            }
+        }
+
         // Close modals on outside click
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
@@ -984,6 +1399,7 @@
 
         // Sayfa yüklendiğinde özellik sayısını güncelle
         updateFeatureCount();
+        updateLayerPanel();
     </script>
 </body>
 </html>

@@ -27,18 +27,32 @@ Balıkesir bölgesini gösteren interaktif bir web harita uygulaması. Bu uygula
     - Boyut ayarlama (20-100px)
     - Sürüklenebilir
     - Tıklayarak boyut değiştirebilme
-  - 📝 **Text Etiketi**: Harita üzerine yazı ekleme
+  - 📝 **Text Etiketi**: Harita üzerine çok satırlı yazı ekleme
     - Font seçimi (Arial, Times New Roman, Courier, vb.)
     - Boyut ayarlama (12-72px)
     - Renk seçimi
+    - **Çok satırlı metin desteği** (Enter ile satır atlama)
     - Sürüklenebilir
     - Tıklayarak metin değiştirebilme
+- **Katman Yönetimi (Layer Panel)**:
+  - 📋 Sağ tarafta açılır/kapanır katman paneli
+  - Tüm çizimleri listeler
+  - Her katman için:
+    - 👁️ Görünürlük açma/kapama
+    - 🎨 Renk değiştirme (poligon, çizgi, daire için)
+    - 🗑️ Tek tek silme
+  - Katman ismi ve türü gösterimi
 - **Düzenleme**: Çizilen şekilleri düzenleme ve silme
 - **Export Formatları**:
   - GeoJSON (.geojson)
   - KML (.kml) - Google Earth uyumlu
   - WKT (.wkt) - Well-Known Text
-  - 📄 **PDF** - Haritanın yüksek kaliteli PDF çıktısı (A4 landscape)
+  - 📄 **PDF** - Gelişmiş PDF export:
+    - Önizleme özelliği
+    - Özel başlık girişi
+    - Logo ekleme (opsiyonel)
+    - A4 landscape format
+    - Otomatik tarih ekleme
 - **Import**: Mevcut GeoJSON dosyalarını yükleme ve görüntüleme
 
 ## Kullanım
@@ -57,19 +71,29 @@ Balıkesir bölgesini gösteren interaktif bir web harita uygulaması. Bu uygula
      - Haritaya tıklayın
      - Simgeyi sürükleyerek taşıyabilirsiniz
      - Simgeye tıklayarak boyutunu değiştirebilirsiniz
-   - **📝 Yazı butonu**: Text etiketi ekle
-     - Yazınızı girin
+   - **📝 Yazı butonu**: Çok satırlı text etiketi ekle
+     - Yazınızı girin (Enter ile yeni satır ekleyebilirsiniz)
      - Font, boyut ve renk seçin
      - Haritaya tıklayın
      - Yazıyı sürükleyerek taşıyabilirsiniz
      - Yazıya tıklayarak metni değiştirebilirsiniz
-4. Çizimlerinizi istediğiniz formatta indirin:
+4. **Katman Panelini** kullanın (sağ taraftaki 📋 butonu):
+   - Tüm katmanları görüntüleyin
+   - Katmanların görünürlüğünü açıp kapatın
+   - Katman renklerini değiştirin
+   - Tek tek silin
+5. Çizimlerinizi istediğiniz formatta indirin:
    - **GeoJSON İndir**: Standart GeoJSON formatında
    - **KML İndir**: Google Earth uyumlu KML formatında
    - **WKT İndir**: Well-Known Text formatında
-   - **📄 PDF İndir**: Haritanın tam görüntüsünü PDF olarak kaydedin
-5. **GeoJSON Yükle** butonu ile mevcut GeoJSON dosyalarınızı haritaya yükleyebilirsiniz
-6. **Tümünü Temizle** butonu ile tüm çizimleri silebilirsiniz
+   - **📄 PDF İndir**: Gelişmiş PDF export
+     - Başlık girin
+     - Logo ekleyin (opsiyonel)
+     - Önizleme oluştur butonuna tıklayın
+     - Önizlemeyi kontrol edin
+     - PDF İndir butonuna tıklayın
+6. **GeoJSON Yükle** butonu ile mevcut GeoJSON dosyalarınızı haritaya yükleyebilirsiniz
+7. **Tümünü Temizle** butonu ile tüm çizimleri silebilirsiniz
 
 ## Teknolojiler
 
@@ -92,17 +116,31 @@ Balıkesir bölgesini gösteren interaktif bir web harita uygulaması. Bu uygula
 - Daire yarıçapını ve rengini seçebilirsiniz
 - İnsan simgesi boyutunu ayarlayabilirsiniz
 - Text için font, boyut ve renk seçenekleri
+- **Çok satırlı text** desteği (Enter ile satır atlama)
+
+### 📋 Katman Yönetimi
+- **Katman Paneli**: Sağ taraftaki panel ile tüm katmanları yönetin
+- **Görünürlük Kontrolü**: Her katmanı ayrı ayrı göster/gizle
+- **Renk Değiştirme**: Katman renklerini dinamik olarak değiştirin
+- **Tek Tek Silme**: İstenmeyen katmanları panelden silin
 
 ### 📊 Otomatik Hesaplamalar
 - Poligonlar için alan hesaplama (hektar)
 - Daireler için yarıçap ve alan bilgisi
 - Çizgiler için uzunluk hesaplama (km)
 
-### 📤 Çoklu Export Formatları
+### 📤 Gelişmiş PDF Export
+- **Önizleme**: PDF'i indirmeden önce görün
+- **Özel Başlık**: Kendi başlığınızı yazın
+- **Logo Ekleme**: Kurumsal logonuzu ekleyin
+- **A4 Format**: Standart A4 landscape boyutunda
+- **Otomatik Tarih**: Export tarihi otomatik eklenir
+
+### 📥 Çoklu Export Formatları
 - **GeoJSON**: Web uygulamaları için
 - **KML**: Google Earth için
 - **WKT**: GIS yazılımları için
-- **PDF**: Baskı ve sunum için
+- **PDF**: Profesyonel baskı ve sunum için
 
 ## Koordinatlar
 
