@@ -472,10 +472,9 @@
         map.on(L.Draw.Event.CREATED, function (event) {
             const layer = event.layer;
 
-            // Daireleri sürüklenebilir yap
+            // Circle'ları sürüklenebilir yap
             if (layer instanceof L.Circle) {
-                layer.dragging = new L.Handler.MarkerDrag(layer);
-                layer.dragging.enable();
+                makeDraggableCircle(layer);
             }
 
             drawnItems.addLayer(layer);
@@ -515,6 +514,32 @@
             document.getElementById('featureCount').textContent = `Çizim: ${count}`;
         }
 
+        // Circle'ı sürüklenebilir yap
+        function makeDraggableCircle(circle) {
+            let isDragging = false;
+
+            circle.on('mousedown', function(e) {
+                isDragging = true;
+                map.dragging.disable();
+                map.on('mousemove', onMouseMove);
+                L.DomEvent.stopPropagation(e);
+            });
+
+            function onMouseMove(e) {
+                if (isDragging) {
+                    circle.setLatLng(e.latlng);
+                }
+            }
+
+            map.on('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    map.dragging.enable();
+                    map.off('mousemove', onMouseMove);
+                }
+            });
+        }
+
         // ============ CUSTOM CIRCLE WITH RADIUS ============
         function addCustomCircle() {
             document.getElementById('circleModal').style.display = 'block';
@@ -540,9 +565,8 @@
                     fillOpacity: 0.3
                 });
 
-                // Daireleri sürüklenebilir yap
-                circle.dragging = new L.Handler.MarkerDrag(circle);
-                circle.dragging.enable();
+                // Circle'ı sürüklenebilir yap
+                makeDraggableCircle(circle);
 
                 drawnItems.addLayer(circle);
 
